@@ -1,0 +1,45 @@
+name: Build and Release CRX Extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-state: '18'
+
+      - name: CRX Packer installieren
+        run: npm install -g crx3
+
+      - name: Privaten Schlüssel generieren
+        # Wir generieren einen festen Schlüssel, damit die ID konsistent bleibt
+        # Wenn du bereits einen .pem Schlüssel hast, solltest du ihn als Secret hinterlegen
+        run: |
+          openssl genrsa -out key.pem 2048
+          # Die resultierende Extension-ID anzeigen (nur zur Info)
+          # openssl rsa -in key.pem -pubout -outform DER | sha256sum
+
+      - name: Extension packen (CRX)
+        run: |
+          # Wir packen die Dateien in eine .crx Datei
+          crx3 -p key.pem -o f89c66f6-8ef3-4af5-9bc2-e11892e604fc.crx manifest.json background.js popup.html popup.js
+
+      - name: GitHub Release erstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: f89c66f6-8ef3-4af5-9bc2-e11892e604fc.crx
+          generate_release_notes: true
+
