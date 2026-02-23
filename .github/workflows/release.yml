@@ -1,0 +1,31 @@
+name: Build and Release Extension
+
+# Dieser Workflow wird ausgeführt, sobald du ein Tag pushst (z.B. v1.0.0) 
+# oder ihn manuell im "Actions" Tab auslöst.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Wichtig, um Releases erstellen zu dürfen
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Extension-Dateien zippen
+        run: |
+          # Erstellt ein ZIP-Archiv mit den Kern-Dateien der Extension
+          zip -r applink-extension.zip manifest.json background.js popup.html popup.js
+
+      - name: GitHub Release erstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: applink-extension.zip
+          generate_release_notes: true
+
