@@ -1,46 +1,83 @@
-// Nutzen von chrome.storage für Persistenz
-let rules = [];
+// Standardeinstellungen: 'off', 'app' oder 'livecontainer'
+let settings = {
+    spotify: 'off',
+    youtube: 'off',
+    ytmusic: 'off'
+};
 
-function updateRules() {
-    chrome.storage.sync.get(['appLinkRules'], (data) => {
-        rules = data.appLinkRules || [];
+function loadSettings() {
+    chrome.storage.sync.get(['appLinkSettings'], (data) => {
+        if (data.appLinkSettings) {
+            settings = data.appLinkSettings;
+        }
     });
 }
 
 // Initial laden
-updateRules();
+loadSettings();
 
-// Auf Änderungen reagieren
+// Auf Änderungen im Popup reagieren
 chrome.storage.onChanged.addListener((changes) => {
-    if (changes.appLinkRules) {
-        rules = changes.appLinkRules.newValue || [];
+    if (changes.appLinkSettings) {
+        settings = changes.appLinkSettings.newValue || settings;
     }
 });
 
-/**
- * Auf iOS/Mobile ist onBeforeNavigate oft zuverlässiger als declarativeNetRequest 
- * für App-URI-Umleitungen, da der Browser den Handshake zur App besser handhabt.
- */
+// URL-Navigation abfangen
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-    if (details.frameId !== 0 || rules.length === 0) return;
+    if (details.frameId !== 0) return; // Nur Haupt-Frames beachten
 
-    const currentUrl = details.url;
-    if (!currentUrl.startsWith('http')) return;
+    const url = details.url;
+    if (!url.startsWith('http')) return;
 
-    for (const rule of rules) {
-        try {
-            const regex = new RegExp(rule.domainPattern, 'i');
-            if (regex.test(currentUrl)) {
-                const targetUri = rule.uriTemplate.replace('$URL', currentUrl);
-                
-                // Wir führen ein kurzes Delay ein, falls die Engine auf iOS 
-                // Zeit braucht, um den Navigations-State zu klären
-                chrome.tabs.update(details.tabId, { url: targetUri });
-                break;
-            }
-        } catch (e) {
-            console.error("AppLink Regex Error:", e);
+    let targetUri = null;
+    let service = null;
+
+    // 1. YouTube Music Prüfung (muss vor normalem YouTube geprüft werden)
+    if (url.startsWith('http://music.youtube.com/') || url.startsWith('https://music.youtube.com/')) {
+        service = 'ytmusic';
+        if (settings.ytmusic !== 'off') {
+            const rest = url.replace(/^https?:\/\/music\.youtube\.com\//, '');
+            targetUri = 'youtubemusic://music.youtube.com/' + rest;
         }
     }
-});
+    // 2. YouTube Prüfung
+    else if (url.match(/^https?:\/\/(www\.)?youtube\.com\//)) {
+        service = 'youtube';
+        if (settings.youtube !== 'off') {
+            const rest = url.replace(/^https?:\/\/(www\.)?youtube\.com\//, '');
+            targetUri = 'youtube://youtube.com/' + rest;
+        }
+    } else if (url.match(/^https?:\/\/youtu\.be\//)) {
+        service = 'youtube';
+        if (settings.youtube !== 'off') {
+            const rest = url.replace(/^https?:\/\/youtu\.be\//, '');
+            targetUri = 'youtube://youtu.be/' + rest;
+        }
+    }
+    // 3. Spotify Prüfung
+    else if (url.includes('spotify.com')) {
+        service = 'spotify';
+        if (settings.spotify !== 'off') {
+            // Sucht nach /track/, /artist/, /album/ oder /playlist/ gefolgt vom Rest der URL
+            const match = url.match(/(track|artist|album|playlist)\/(.*)/);
+            if (match) {
+                targetUri = 'spotify://' + match[1] + '/' + match[2];
+            }
+        }
+    }
 
+    // Falls ein passender Service aktiv ist und eine Ziel-URI generiert wurde
+    if (targetUri && service && settings[service] !== 'off') {
+        let finalUrl = targetUri;
+
+        // Falls LiveContainer ausgewählt ist, Base64 codieren
+        if (settings[service] === 'livecontainer') {
+            // btoa encodiert den String in Base64
+            finalUrl = 'livecontainer://open-web-page?url=' + btoa(targetUri);
+        }
+
+        // Leitet den Tab um
+        chrome.tabs.update(details.tabId, { url: finalUrl });
+    }
+});
