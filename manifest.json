@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AppLink",
-  "version": "1.0.0",
-  "description": "Leitet bestimmte Webseiten automatisch an festgelegte App-URIs weiter.",
+  "version": "2.0.0",
+  "description": "Automatically redirects Spotify, YouTube, and YT Music links to their respective native apps or LiveContainer.",
   "permissions": [
     "webNavigation",
     "storage",
@@ -16,7 +16,6 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AppLink konfigurieren"
+    "default_title": "AppLink Configuration"
   }
 }
-
