@@ -1,30 +1,49 @@
-# AppLink Extension
+<div id="toc">
+  <ul align="center" style="list-style: none">
+    <br>
+    <img src="./images/icon.png" alt="Logo" width="128">
+    <br>
+    <summary>
+      <h1 style="border-bottom: 0; display: inline-block;">
+        <b><u>AppLink</u></b></br>
+          <sub><i>Browser Extension</i> 🌐</sub></h1>
+    </summary>
+Simple App Redirection for Spotify, YouTube, and YT Music !
+  </ul>
+</div>
 
-AppLink is a lightweight browser extension that automatically intercepts web URLs for specific media services and seamlessly redirects them either to their native applications or routes them through LiveContainer.
+> [!NOTE]
+> ⚠️ **Designed for iOS/iPadOS!**
+> While this extension is technically functional on Desktop and Android, it is practically useless there.
+> <details>
+> <summary><strong>Read why</strong></summary>
+> 
+> 1. **Desktop:** The extension heavily relies on specific custom URI schemes (such as `youtube://` or `livecontainer://`) that are simply not supported in desktop environments.
+> 2. **Android:** The extension is entirely redundant here. Android natively handles deep links and opens apps by default anyway. This built-in OS behavior works perfectly right out of the box, even for sideloaded applications.
+> 
+> </details>
 
-## Supported Services
-- **Spotify** (Tracks, Artists, Albums, Playlists)
-- **YouTube** (including `youtu.be` links)
-- **YouTube Music**
 
-## Features & Redirection Logic
-The extension provides a simple popup menu with two main categories. You can toggle each service independently. Note: A service can only be active in **one** category at a time (Mutual Exclusivity).
+## What is **AppLink** ?
 
-### 1. Open in App
-Redirects regular web URLs directly into the native app's custom URI scheme.
-* **Spotify:** `http(s)://...spotify.com/.../<type>/<rest>` &rarr; `spotify://<type>/<rest>`
-* **YouTube:** `https://www.youtube.com/<rest>` &rarr; `youtube://youtube.com/<rest>`
-* **YouTube Music:** `https://music.youtube.com/<rest>` &rarr; `youtubemusic://music.youtube.com/<rest>`
+AppLink is a lightweight browser extension that automatically detects Spotify, YouTube, and YouTube Music URLs and redirects them either to their native Apps or to the respective app inside 'LiveContainer'. Finally an 'Open in app...' experience as it should be by default!
 
-### 2. Open in LiveContainer
-Instead of opening the app normally, this mode takes the generated custom URI, encodes it into base64, and passes it to LiveContainer.
-* Example for YouTube: `https://www.youtube.com/watch?v=123`
-* Target URI becomes: `youtube://youtube.com/watch?v=123`
-* Encoded and redirected to: `livecontainer://open-web-page?url=eW91dHViZTovL3lvdXR1YmUuY29tL3dhdGNoP3Y9MTIz`
+## Features
 
-## Installation
-1. Download or clone this repository.
-2. Open your Chromium-based browser (Edge/Chrome) and navigate to the extensions page (`edge://extensions` or `chrome://extensions`).
-3. Enable **Developer mode**.
-4. Click **Load unpacked** and select the folder containing this extension.
-5. Click the extension icon in your toolbar to configure your routing rules!
+'AppLink' continuously monitors your browser’s navigation events in the background. When it detects URLs from Spotify, YouTube, or YouTube Music, it intelligently reroutes them based on your personalized preferences.
+
+### The extension provides a simple popup menu with two categories:
+
+1. 'Open in App'
+    - Redirects to native or sideloaded App
+2. 'Open in LiveContainer'
+    - Redirects to the respective App inside **LiveContainer**
+    You can toggle each service independently.
+
+## Privacy
+
+- No personal data collected.
+
+## Source Code & Support
+
+Check out the source code on GitHub: [https://github.com/Bitte-ein-Git/applink-extension](https://github.com/Bitte-ein-Git/applink-extension)

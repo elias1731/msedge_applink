@@ -1,0 +1,63 @@
+name: Build and Release Extension
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Bitte-ein-Git/action_clear-runs@main
+        with:
+          mode: 'repo'
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Read Version from Manifest
+        id: get_version
+        run: |
+          VERSION=$(jq -r .version manifest.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Install ImageMagick
+        run: sudo apt-get install -y imagemagick
+
+      - name: Generate and Commit Resized Icons
+        run: |
+          if [ -f "images/icon.png" ] && [ ! -f "images/icon-128.png" ]; then
+            convert images/icon.png -resize 128x128 images/icon-128.png
+            convert images/icon.png -resize 48x48 images/icon-48.png
+            convert images/icon.png -resize 32x32 images/icon-32.png
+            convert images/icon.png -resize 16x16 images/icon-16.png
+            
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add images/icon-*.png
+            git commit -m "Auto-generate resized icons"
+            git push
+          fi
+
+      - name: Zip Extension Files
+        run: |
+          zip -r applink-extension.zip manifest.json background.js popup.html popup.js options.html options.js images/
+
+      - name: Create or Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ env.VERSION }}" applink-extension.zip \
+            --title "📲 • AppLink v${{ env.VERSION }}" \
+            --target main \
+            --clobber || \
+          gh release upload "v${{ env.VERSION }}" applink-extension.zip
